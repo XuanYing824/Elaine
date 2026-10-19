@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Tactile Blind Path Navigation</title>
+
+ 
+
+  <!-- Leaflet CSS -->
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+ 
+
+  <style>
+
+    * { box-sizing: border-box; }
+
+    body {
+
+      margin: 0;
+
+      font-family: Arial, sans-serif;
+
+      background: #f3f6fa;
+
+      color: #172033;
+
+    }
+
+    header {
+
+      background: #174c3c;
+
+      color: white;
+
+      padding: 16px;
+
+      text-align: center;
+
+    }
+
+    header h1 { margin: 0 0 6px; font-size: 22px; }
+
+    header p { margin: 0; font-size: 13px; opacity: 0.9; }
+
+ 
+
+    .container {
+
+      max-width: 1000px;
+
+      margin: 16px auto;
+
+      padding: 0 16px;
+
+    }
+
+    .panel {
+
+      background: white;
+
+      padding: 18px;
+
+      border-radius: 12px;
+
+      margin-bottom: 14px;
+
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+
+    }
+
+    label {
+
+      display: block;
+
+      font-weight: bold;
+
+      margin: 10px 0 5px;
+
+      font-size: 13px;
+
+    }
+
+    input {
+
+      width: 100%;
+
+      padding: 11px;
+
+      border: 1px solid #ccd3dd;
+
+      border-radius: 7px;
+
+      font-size: 14px;
+
+    }
+
+    .btn-row {
+
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+
+      margin-top: 12px;
+
+    }
+
+    button {
+
+      border: none;
+
+      border-radius: 7px;
+
+      padding: 11px 15px;
+
+      cursor: pointer;
+
+      font-size: 13px;
+
+      font-weight: bold;
+
+      background: #17694e;
+
+      color: white;
+
+      display: inline-flex;
+
+      align-items: center;
+
+      gap: 6px;
+
+    }
+
+    button.secondary {
+
+      background: #e6eee9;
+
+      color: #174c3c;
+
+    }
+
+    button.accent {
+
+      background: #d97706;
+
+      color: white;
+
+    }
+
+    button:disabled {
+
+      opacity: 0.55;
+
+      cursor: not-allowed;
+
+    }
+
+    #map {
+
+      width: 100%;
+
+      height: 420px;
+
+      border-radius: 12px;
+
+      z-index: 1;
+
+    }
+
+    #status {
+
+      margin-top: 12px;
+
+      padding: 12px;
+
+      background: #eaf2ee;
+
+      border-left: 4px solid #17694e;
+
+      border-radius: 4px;
+
+      font-weight: 500;
+
+      line-height: 1.4;
+
+      font-size: 14px;
+
+    }
+
+    .stats {
+
+      display: grid;
+
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+
+      gap: 10px;
+
+      margin-top: 14px;
+
+    }
+
+    .stat {
+
+      background: #edf5f0;
+
+      padding: 12px;
+
+      border-radius: 8px;
+
+      text-align: center;
+
+      font-size: 13px;
+
+    }
+
+    .stat strong {
+
+      display: block;
+
+      font-size: 18px;
+
+      margin-top: 4px;
+
+      color: #174c3c;
+
+    }
+
+ 
+
+    .voice-controls {
+
+      display: flex;
+
+      gap: 8px;
+
+      margin-top: 14px;
+
+      padding: 10px;
+
+      background: #f8fafc;
+
+      border: 1px solid #e2e8f0;
+
+      border-radius: 8px;
+
+      align-items: center;
+
+      flex-wrap: wrap;
+
+    }
+
+ 
+
+    .directions-container {
+
+      margin-top: 14px;
+
+      max-height: 270px;
+
+      overflow-y: auto;
+
+      border: 1px solid #ccd3dd;
+
+      border-radius: 8px;
+
+      padding: 10px;
+
+    }
+
+    .instruction-step {
+
+      padding: 10px;
+
+      border-bottom: 1px solid #eef2f6;
+
+      display: flex;
+
+      gap: 12px;
+
+      align-items: center;
+
+      border-radius: 6px;
+
+      transition: background 0.2s;
+
+    }
+
+    .instruction-step.active {
+
+      background: #fef3c7;
+
+      border-left: 4px solid #d97706;
+
+    }
+
+    .step-number {
+
+      background: #17694e;
+
+      color: white;
+
+      border-radius: 50%;
+
+      width: 26px;
+
+      height: 26px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      font-size: 12px;
+
+      font-weight: bold;
+
+      flex-shrink: 0;
+
+    }
+
+    .step-badge {
+
+      display: inline-block;
+
+      padding: 2px 6px;
+
+      border-radius: 4px;
+
+      font-size: 11px;
+
+      font-weight: bold;
+
+      margin-bottom: 3px;
+
+    }
+
+    .badge-tactile { background: #fef3c7; color: #b45309; }
+
+    .badge-regular { background: #e5e7eb; color: #374151; }
+
+ 
+
+    .map-legend {
+
+      display: flex;
+
+      gap: 16px;
+
+      font-size: 12px;
+
+      font-weight: bold;
+
+      margin-bottom: 8px;
+
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+
+    .legend-color { width: 18px; height: 6px; border-radius: 3px; }
+
+ 
+
+    @media (max-width: 600px) {
+
+      .stats { grid-template-columns: 1fr; }
+
+      #map { height: 320px; }
+
+    }
+
+  </style>
+
+</head>
+
+ 
+
+<body>
+
+  <header>
+
+    <h1>Tactile Blind Path Navigation</h1>
+
+    <p>Voice-guided accessible route planner prioritizing tactile blind paving paths.</p>
+
+  </header>
+
+ 
+
+  <main class="container">
+
+    <section class="panel">
+
+      <h2>Plan Your Journey</h2>
+
+ 
+
+      <label for="start">Starting Point</label>
+
+      <input id="start" type="text" placeholder="e.g. Faculty of Science, Universiti Malaya">
+
+ 
+
+      <label for="destination">Destination</label>
+
+      <input id="destination" type="text" placeholder="e.g. Kolej Kediaman Ke-3, Universiti Malaya">
+
+ 
+
+      <div class="btn-row">
+
+        <button id="routeBtn" type="button" onclick="findRoute()">Find Route</button>
+
+        <button class="secondary" type="button" onclick="useMyLocation()">Use My Location</button>
+
+        <button class="secondary" type="button" onclick="toggleVoice()">Voice: <span id="voiceStatus">ON</span></button>
+
+        <button class="secondary" type="button" onclick="clearRoute()">Clear</button>
+
+      </div>
+
+ 
+
+      <div id="status" role="status" aria-live="polite">
+
+        Ready. Enter starting point and destination to find a route.
+
+      </div>
+
+ 
+
+      <div class="stats">
+
+        <div class="stat">
+
+          Distance
+
+          <strong id="distance">—</strong>
+
+        </div>
+
+        <div class="stat">
+
+          Tactile Blind Path
+
+          <strong id="tactileCoverage">—</strong>
+
+        </div>
+
+        <div class="stat">
+
+          Duration
+
+          <strong id="duration">—</strong>
+
+        </div>
+
+      </div>
+
+ 
+
+      <!-- Voice Guidance Controls -->
+
+      <div class="voice-controls" id="voiceBar" style="display: none;">
+
+        <span style="font-size: 13px; font-weight: bold;">Voice Guidance:</span>
+
+        <button class="secondary" onclick="speakCurrentStep()">Repeat Step</button>
+
+        <button class="secondary" onclick="nextStepVoice()">Next Step</button>
+
+        <button class="accent" id="autoPlayBtn" onclick="toggleAutoPlay()">Read Entire Route</button>
+
+        <button class="secondary" id="simBtn" onclick="toggleSimulation()">Simulate Walk</button>
+
+      </div>
+
+ 
+
+      <div class="directions-container" id="directionsList">
+
+        <p style="color: #64748b; margin: 0; text-align: center;">Turn-by-turn guidance will appear here once route is found.</p>
+
+      </div>
+
+    </section>
+
+ 
+
+    <section class="panel">
+
+      <div class="map-legend">
+
+        <div class="legend-item">
+
+          <div class="legend-color" style="background: #d97706;"></div> Tactile Blind Paving
+
+        </div>
+
+        <div class="legend-item">
+
+          <div class="legend-color" style="background: #2563eb;"></div> Regular Sidewalk / Way
+
+        </div>
+
+      </div>
+
+      <div id="map"></div>
+
+    </section>
+
+  </main>
+
+ 
+
+  <!-- Leaflet JS -->
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+ 
+
+  <script>
+
+    const map = L.map("map").setView([3.1209, 101.6538], 16);
+
+ 
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+
+      maxZoom: 19,
+
+      attribution: '&copy; OpenStreetMap contributors'
+
+    }).addTo(map);
+
+ 
+
+    let startMarker = null;
+
+    let destinationMarker = null;
+
+    let userMarker = null;
+
+    let routeLine = null;
+
+ 
+
+    let voiceEnabled = true;
+
+    let instructions = [];
+
+    let currentStepIdx = 0;
+
+    let autoPlayTimer = null;
+
+    let isAutoPlaying = false;
+
+    let simulationTimer = null;
+
+    let locationWatcher = null;
+
+ 
+
+    const locationCache = new Map();
+
+ 
+
+    // Direct coordinates lookup for UM landmarks not tagged as single points in OSM
+
+    const umDirectLocations = {
+
+      "fakulti sains": { lat: 3.12364, lon: 101.65468, name: "Faculty of Science, Universiti Malaya" },
+
+      "faculty of science": { lat: 3.12364, lon: 101.65468, name: "Faculty of Science, Universiti Malaya" },
+
+      "fakulti bahasa": { lat: 3.1205, lon: 101.6528, name: "Faculty of Languages and Linguistics, Universiti Malaya" },
+
+      "faculty of languages": { lat: 3.1205, lon: 101.6528, name: "Faculty of Languages and Linguistics, Universiti Malaya" },
+
+      "fakulti sastera": { lat: 3.1205, lon: 101.6568, name: "Faculty of Arts and Social Sciences, Universiti Malaya" },
+
+      "faculty of arts": { lat: 3.1205, lon: 101.6568, name: "Faculty of Arts and Social Sciences, Universiti Malaya" },
+
+      "fakulti undang-undang": { lat: 3.1202, lon: 101.6595, name: "Faculty of Law, Universiti Malaya" },
+
+      "faculty of law": { lat: 3.1202, lon: 101.6595, name: "Faculty of Law, Universiti Malaya" },
+
+      "dtc": { lat: 3.1209, lon: 101.6579, name: "Dewan Tunku Canselor (DTC), Universiti Malaya" },
+
+      "perpustakaan": { lat: 3.1208, lon: 101.6558, name: "Main Library, Universiti Malaya" },
+
+      "main library": { lat: 3.1208, lon: 101.6558, name: "Main Library, Universiti Malaya" }
+
+    };
+
+ 
+
+    // Direct coordinates for all 12 UM Residential Colleges (KK1 - KK12)
+
+    const umResidentialColleges = {
+
+      "kk1": { lat: 3.1187, lon: 101.6543, name: "Kolej Kediaman Pertama (Astaka), UM" },
+
+      "kolej 1": { lat: 3.1187, lon: 101.6543, name: "Kolej Kediaman Pertama (Astaka), UM" },
+
+      "kolej kediaman pertama": { lat: 3.1187, lon: 101.6543, name: "Kolej Kediaman Pertama (Astaka), UM" },
+
+      "kolej kediaman ke-1": { lat: 3.1187, lon: 101.6543, name: "Kolej Kediaman Pertama (Astaka), UM" },
+
+      "1st residential college": { lat: 3.1187, lon: 101.6543, name: "Kolej Kediaman Pertama (Astaka), UM" },
+
+      "astaka": { lat: 3.1187, lon: 101.6543, name: "Kolej Kediaman Pertama (Astaka), UM" },
+
+ 
+
+      "kk2": { lat: 3.1172, lon: 101.6570, name: "Kolej Kediaman Kedua (Tuanku Bahiyah), UM" },
+
+      "kolej 2": { lat: 3.1172, lon: 101.6570, name: "Kolej Kediaman Kedua (Tuanku Bahiyah), UM" },
+
+      "kolej kediaman kedua": { lat: 3.1172, lon: 101.6570, name: "Kolej Kediaman Kedua (Tuanku Bahiyah), UM" },
+
+      "kolej kediaman ke-2": { lat: 3.1172, lon: 101.6570, name: "Kolej Kediaman Kedua (Tuanku Bahiyah), UM" },
+
+      "2nd residential college": { lat: 3.1172, lon: 101.6570, name: "Kolej Kediaman Kedua (Tuanku Bahiyah), UM" },
+
+ 
+
+      "kk3": { lat: 3.1251, lon: 101.6512, name: "Kolej Kediaman Ketiga (Tuanku Kurshiah), UM" },
+
+      "kolej 3": { lat: 3.1251, lon: 101.6512, name: "Kolej Kediaman Ketiga (Tuanku Kurshiah), UM" },
+
+      "kolej kediaman ketiga": { lat: 3.1251, lon: 101.6512, name: "Kolej Kediaman Ketiga (Tuanku Kurshiah), UM" },
+
+      "kolej kediaman ke-3": { lat: 3.1251, lon: 101.6512, name: "Kolej Kediaman Ketiga (Tuanku Kurshiah), UM" },
+
+      "kolej kediaman ke 3": { lat: 3.1251, lon: 101.6512, name: "Kolej Kediaman Ketiga (Tuanku Kurshiah), UM" },
+
+      "3rd residential college": { lat: 3.1251, lon: 101.6512, name: "Kolej Kediaman Ketiga (Tuanku Kurshiah), UM" },
+
+ 
+
+      "kk4": { lat: 3.1265, lon: 101.6534, name: "Kolej Kediaman Keempat (Bestari), UM" },
+
+      "kolej 4": { lat: 3.1265, lon: 101.6534, name: "Kolej Kediaman Keempat (Bestari), UM" },
+
+      "kolej kediaman keempat": { lat: 3.1265, lon: 101.6534, name: "Kolej Kediaman Keempat (Bestari), UM" },
+
+      "kolej kediaman ke-4": { lat: 3.1265, lon: 101.6534, name: "Kolej Kediaman Keempat (Bestari), UM" },
+
+      "4th residential college": { lat: 3.1265, lon: 101.6534, name: "Kolej Kediaman Keempat (Bestari), UM" },
+
+ 
+
+      "kk5": { lat: 3.1158, lon: 101.6598, name: "Kolej Kediaman Kelima (Dayasari), UM" },
+
+      "kolej 5": { lat: 3.1158, lon: 101.6598, name: "Kolej Kediaman Kelima (Dayasari), UM" },
+
+      "kolej kediaman kelima": { lat: 3.1158, lon: 101.6598, name: "Kolej Kediaman Kelima (Dayasari), UM" },
+
+      "kolej kediaman ke-5": { lat: 3.1158, lon: 101.6598, name: "Kolej Kediaman Kelima (Dayasari), UM" },
+
+      "5th residential college": { lat: 3.1158, lon: 101.6598, name: "Kolej Kediaman Kelima (Dayasari), UM" },
+
+ 
+
+      "kk6": { lat: 3.1248, lon: 101.6575, name: "Kolej Kediaman Keenam (Ibnu Sina), UM" },
+
+      "kolej 6": { lat: 3.1248, lon: 101.6575, name: "Kolej Kediaman Keenam (Ibnu Sina), UM" },
+
+      "kolej kediaman keenam": { lat: 3.1248, lon: 101.6575, name: "Kolej Kediaman Keenam (Ibnu Sina), UM" },
+
+      "kolej kediaman ke-6": { lat: 3.1248, lon: 101.6575, name: "Kolej Kediaman Keenam (Ibnu Sina), UM" },
+
+      "6th residential college": { lat: 3.1248, lon: 101.6575, name: "Kolej Kediaman Keenam (Ibnu Sina), UM" },
+
+ 
+
+      "kk7": { lat: 3.1284, lon: 101.6517, name: "Kolej Kediaman Ketujuh (Za'ba), UM" },
+
+      "kolej 7": { lat: 3.1284, lon: 101.6517, name: "Kolej Kediaman Ketujuh (Za'ba), UM" },
+
+      "kolej kediaman ketujuh": { lat: 3.1284, lon: 101.6517, name: "Kolej Kediaman Ketujuh (Za'ba), UM" },
+
+      "kolej kediaman ke-7": { lat: 3.1284, lon: 101.6517, name: "Kolej Kediaman Ketujuh (Za'ba), UM" },
+
+      "7th residential college": { lat: 3.1284, lon: 101.6517, name: "Kolej Kediaman Ketujuh (Za'ba), UM" },
+
+ 
+
+      "kk8": { lat: 3.1219, lon: 101.6508, name: "Kolej Kediaman Kelapan (Kinabalu), UM" },
+
+      "kolej 8": { lat: 3.1219, lon: 101.6508, name: "Kolej Kediaman Kelapan (Kinabalu), UM" },
+
+      "kolej kediaman kelapan": { lat: 3.1219, lon: 101.6508, name: "Kolej Kediaman Kelapan (Kinabalu), UM" },
+
+      "kolej kediaman ke-8": { lat: 3.1219, lon: 101.6508, name: "Kolej Kediaman Kelapan (Kinabalu), UM" },
+
+      "8th residential college": { lat: 3.1219, lon: 101.6508, name: "Kolej Kediaman Kelapan (Kinabalu), UM" },
+
+ 
+
+      "kk9": { lat: 3.1226, lon: 101.6483, name: "Kolej Kediaman Kesembilan (Tun Syed Zahiruddin), UM" },
+
+      "kolej 9": { lat: 3.1226, lon: 101.6483, name: "Kolej Kediaman Kesembilan (Tun Syed Zahiruddin), UM" },
+
+      "kolej kediaman kesembilan": { lat: 3.1226, lon: 101.6483, name: "Kolej Kediaman Kesembilan (Tun Syed Zahiruddin), UM" },
+
+      "kolej kediaman ke-9": { lat: 3.1226, lon: 101.6483, name: "Kolej Kediaman Kesembilan (Tun Syed Zahiruddin), UM" },
+
+      "9th residential college": { lat: 3.1226, lon: 101.6483, name: "Kolej Kediaman Kesembilan (Tun Syed Zahiruddin), UM" },
+
+ 
+
+      "kk10": { lat: 3.1189, lon: 101.6604, name: "Kolej Kediaman Kesepuluh (Tun Ahmad Zaidi), UM" },
+
+      "kolej 10": { lat: 3.1189, lon: 101.6604, name: "Kolej Kediaman Kesepuluh (Tun Ahmad Zaidi), UM" },
+
+      "kolej kediaman kesepuluh": { lat: 3.1189, lon: 101.6604, name: "Kolej Kediaman Kesepuluh (Tun Ahmad Zaidi), UM" },
+
+      "kolej kediaman ke-10": { lat: 3.1189, lon: 101.6604, name: "Kolej Kediaman Kesepuluh (Tun Ahmad Zaidi), UM" },
+
+      "10th residential college": { lat: 3.1189, lon: 101.6604, name: "Kolej Kediaman Kesepuluh (Tun Ahmad Zaidi), UM" },
+
+ 
+
+      "kk11": { lat: 3.1197, lon: 101.6622, name: "Kolej Kediaman Kesebelas (Ungku Aziz), UM" },
+
+      "kolej 11": { lat: 3.1197, lon: 101.6622, name: "Kolej Kediaman Kesebelas (Ungku Aziz), UM" },
+
+      "kolej kediaman kesebelas": { lat: 3.1197, lon: 101.6622, name: "Kolej Kediaman Kesebelas (Ungku Aziz), UM" },
+
+      "kolej kediaman ke-11": { lat: 3.1197, lon: 101.6622, name: "Kolej Kediaman Kesebelas (Ungku Aziz), UM" },
+
+      "11th residential college": { lat: 3.1197, lon: 101.6622, name: "Kolej Kediaman Kesebelas (Ungku Aziz), UM" },
+
+ 
+
+      "kk12": { lat: 3.1268, lon: 101.6585, name: "Kolej Kediaman Kedua Belas (Raja Dr Nazrin Shah), UM" },
+
+      "kolej 12": { lat: 3.1268, lon: 101.6585, name: "Kolej Kediaman Kedua Belas (Raja Dr Nazrin Shah), UM" },
+
+      "kolej kediaman kedua belas": { lat: 3.1268, lon: 101.6585, name: "Kolej Kediaman Kedua Belas (Raja Dr Nazrin Shah), UM" },
+
+      "kolej kediaman ke-12": { lat: 3.1268, lon: 101.6585, name: "Kolej Kediaman Kedua Belas (Raja Dr Nazrin Shah), UM" },
+
+      "12th residential college": { lat: 3.1268, lon: 101.6585, name: "Kolej Kediaman Kedua Belas (Raja Dr Nazrin Shah), UM" }
+
+    };
+
+ 
+
+    function speakText(text, onComplete = null) {
+
+      if (!voiceEnabled || !("speechSynthesis" in window)) {
+
+        if (onComplete) onComplete();
+
+        return;
+
+      }
+
+ 
+
+      window.speechSynthesis.cancel();
+
+ 
+
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      utterance.rate = 0.95;
+
+      utterance.lang = "en-US";
+
+ 
+
+      if (onComplete) {
+
+        utterance.onend = onComplete;
+
+        utterance.onerror = onComplete;
+
+      }
+
+ 
+
+      window.speechSynthesis.speak(utterance);
+
+    }
+
+ 
+
+    function announce(msg) {
+
+      document.getElementById("status").textContent = msg;
+
+      speakText(msg);
+
+    }
+
+ 
+
+    function toggleVoice() {
+
+      voiceEnabled = !voiceEnabled;
+
+      document.getElementById("voiceStatus").textContent = voiceEnabled ? "ON" : "OFF";
+
+      if (!voiceEnabled) {
+
+        window.speechSynthesis.cancel();
+
+        stopAutoPlay();
+
+      } else {
+
+        speakText("Voice guidance enabled.");
+
+      }
+
+    }
+
+ 
+
+    function distanceMetres(a, b) {
+
+      const R = 6371000;
+
+      const rad = v => v * Math.PI / 180;
+
+      const dLat = rad(b.lat - a.lat);
+
+      const dLon = rad(b.lon - a.lon);
+
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+
+      return 2 * R * Math.asin(Math.sqrt(h));
+
+    }
+
+ 
+
+    function getBearing(a, b) {
+
+      const rad = Math.PI / 180;
+
+      const lat1 = a.lat * rad;
+
+      const lat2 = b.lat * rad;
+
+      const dLon = (b.lon - a.lon) * rad;
+
+      const y = Math.sin(dLon) * Math.cos(lat2);
+
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+
+      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+
+    }
+
+ 
+
+    function getTurnDescription(turnAngle) {
+
+      const diff = ((turnAngle + 540) % 360) - 180;
+
+      const abs = Math.abs(diff);
+
+ 
+
+      if (abs < 30) return "Continue straight";
+
+      if (abs < 65) return diff > 0 ? "Bear slightly right" : "Bear slightly left";
+
+      if (abs < 125) return diff > 0 ? "Turn right" : "Turn left";
+
+      return diff > 0 ? "Make a sharp right" : "Make a sharp left";
+
+    }
+
+ 
+
+    async function geocode(place, isRetry = false) {
+
+      let clean = place.trim().toLowerCase();
+
+ 
+
+      // 1. Direct coordinates match (lat, lon)
+
+      const coordMatch = place.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+
+      if (coordMatch) {
+
+        return { lat: Number(coordMatch[1]), lon: Number(coordMatch[2]), name: place };
+
+      }
+
+ 
+
+      // 2. Direct lookup for UM faculties
+
+      for (const [key, val] of Object.entries(umDirectLocations)) {
+
+        if (clean.includes(key)) {
+
+          return val;
+
+        }
+
+      }
+
+ 
+
+      // 3. Direct coordinates for UM residential colleges
+
+      for (const [key, val] of Object.entries(umResidentialColleges)) {
+
+        if (clean.includes(key)) {
+
+          return val;
+
+        }
+
+      }
+
+ 
+
+      if (locationCache.has(clean)) return locationCache.get(clean);
+
+ 
+
+      // 4. Query Nominatim with cleaned string
+
+      const queryTerm = clean.replace(/ke-(\d+)/g, "ke $1");
+
+      const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(queryTerm);
+
+ 
+
+      const res = await fetch(url);
+
+      if (!res.ok) throw new Error("Location lookup service unavailable.");
+
+      const list = await res.json();
+
+ 
+
+      if (!list.length) {
+
+        if (!isRetry && !queryTerm.includes("universiti malaya") && !queryTerm.includes("um")) {
+
+          return await geocode(queryTerm + " Universiti Malaya", true);
+
+        }
+
+        throw new Error(`Location "${place}" not found. Try entering KK1 to KK12, or the specific faculty name.`);
+
+      }
+
+ 
+
+      const result = { lat: Number(list[0].lat), lon: Number(list[0].lon), name: list[0].display_name };
+
+      locationCache.set(place.trim().toLowerCase(), result);
+
+      return result;
+
+    }
+
+ 
+
+    async function detectPedestrianPaths(bounds) {
+
+      const query = `
+
+        [out:json][timeout:35];
+
+        (
+
+          way["highway"~"^(footway|path|pedestrian|living_street|service|residential|unclassified|steps|crossing|track)$"]
+
+            (${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
+
+        );
+
+        out geom;
+
+      `;
+
+ 
+
+      const servers = [
+
+        "https://overpass-api.de/api/interpreter",
+
+        "https://overpass.kumi.systems/api/interpreter"
+
+      ];
+
+ 
+
+      for (const server of servers) {
+
+        try {
+
+          const res = await fetch(server + "?data=" + encodeURIComponent(query));
+
+          if (!res.ok) continue;
+
+          const data = await res.json();
+
+          if (Array.isArray(data.elements)) {
+
+            return data.elements.map(e => ({
+
+              ...e,
+
+              isTactile: e.tags?.tactile_paving === "yes"
+
+            }));
+
+          }
+
+        } catch (err) {}
+
+      }
+
+      return [];
+
+    }
+
+ 
+
+    async function getOSRMRoute(start, destination) {
+
+      const url = `https://router.project-osrm.org/route/v1/foot/${start.lon},${start.lat};${destination.lon},${destination.lat}?overview=full&geometries=geojson&steps=true`;
+
+      const res = await fetch(url);
+
+      if (!res.ok) throw new Error("Walking routing service unreachable.");
+
+      const data = await res.json();
+
+      if (data.code !== "Ok" || !data.routes.length) throw new Error("No walking connection found.");
+
+      return data.routes[0];
+
+    }
+
+ 
+
+    function buildRoutingGraph(features, start, destination) {
+
+      const graph = new Map();
+
+      const coordinates = new Map();
+
+      const deadEnds = new Set();
+
+ 
+
+      function addNode(pt) {
+
+        const id = `${pt.lat.toFixed(7)},${pt.lon.toFixed(7)}`;
+
+        if (!coordinates.has(id)) {
+
+          coordinates.set(id, { lat: pt.lat, lon: pt.lon });
+
+          graph.set(id, []);
+
+        }
+
+        return id;
+
+      }
+
+ 
+
+      function addEdge(u, v, isTactile, isSynth = false) {
+
+        if (u === v) return;
+
+        const ptA = coordinates.get(u);
+
+        const ptB = coordinates.get(v);
+
+        const len = distanceMetres(ptA, ptB);
+
+        if (len < 0.1) return;
+
+ 
+
+        // Tactile paving gets heavy priority (0.2x cost)
+
+        let cost = len * (isTactile ? 0.2 : 1.0);
+
+        if (isSynth) cost = len * 2.0;
+
+ 
+
+        graph.get(u).push({ target: v, length: len, cost, isTactile });
+
+        graph.get(v).push({ target: u, length: len, cost, isTactile });
+
+      }
+
+ 
+
+      for (const f of features) {
+
+        if (!f.geometry || f.geometry.length < 2) continue;
+
+        const tags = f.tags || {};
+
+        if (tags.foot === "no" || tags.access === "no" || tags.access === "private") continue;
+
+ 
+
+        const isTactile = tags.tactile_paving === "yes";
+
+        const nodeIds = f.geometry.map(pt => addNode(pt));
+
+ 
+
+        deadEnds.add(nodeIds[0]);
+
+        deadEnds.add(nodeIds[nodeIds.length - 1]);
+
+ 
+
+        for (let i = 0; i < nodeIds.length - 1; i++) {
+
+          addEdge(nodeIds[i], nodeIds[i + 1], isTactile);
+
+        }
+
+      }
+
+ 
+
+      // Connect isolated campus paths within 35m
+
+      const deadEndList = Array.from(deadEnds);
+
+      for (let i = 0; i < deadEndList.length; i++) {
+
+        const idA = deadEndList[i];
+
+        const coordA = coordinates.get(idA);
+
+        for (let j = i + 1; j < deadEndList.length; j++) {
+
+          const idB = deadEndList[j];
+
+          const coordB = coordinates.get(idB);
+
+          if (distanceMetres(coordA, coordB) <= 35) {
+
+            addEdge(idA, idB, false, true);
+
+          }
+
+        }
+
+      }
+
+ 
+
+      const startId = addNode(start);
+
+      const destId = addNode(destination);
+
+ 
+
+      for (const [id, coord] of coordinates) {
+
+        if (id === startId || id === destId) continue;
+
+        if (distanceMetres(start, coord) <= 120) addEdge(startId, id, false, true);
+
+        if (distanceMetres(destination, coord) <= 120) addEdge(destId, id, false, true);
+
+      }
+
+ 
+
+      return { graph, coordinates, startId, destId };
+
+    }
+
+ 
+
+    function runDijkstra(graphData) {
+
+      const { graph, coordinates, startId, destId } = graphData;
+
+      const costs = new Map();
+
+      const previous = new Map();
+
+      const unvisited = new Set(graph.keys());
+
+ 
+
+      for (const id of graph.keys()) costs.set(id, Infinity);
+
+      costs.set(startId, 0);
+
+ 
+
+      while (unvisited.size > 0) {
+
+        let current = null;
+
+        let lowest = Infinity;
+
+ 
+
+        for (const node of unvisited) {
+
+          const c = costs.get(node);
+
+          if (c < lowest) {
+
+            lowest = c;
+
+            current = node;
+
+          }
+
+        }
+
+ 
+
+        if (current === null || lowest === Infinity || current === destId) break;
+
+        unvisited.delete(current);
+
+ 
+
+        for (const edge of graph.get(current)) {
+
+          if (!unvisited.has(edge.target)) continue;
+
+          const alt = lowest + edge.cost;
+
+          if (alt < costs.get(edge.target)) {
+
+            costs.set(edge.target, alt);
+
+            previous.set(edge.target, { from: current, edge });
+
+          }
+
+        }
+
+      }
+
+ 
+
+      if (!Number.isFinite(costs.get(destId))) return null;
+
+ 
+
+      const segments = [];
+
+      let curr = destId;
+
+      while (curr !== startId) {
+
+        const step = previous.get(curr);
+
+        segments.push({
+
+          from: coordinates.get(step.from),
+
+          to: coordinates.get(curr),
+
+          distance: step.edge.length,
+
+          isTactile: step.edge.isTactile
+
+        });
+
+        curr = step.from;
+
+      }
+
+ 
+
+      segments.reverse();
+
+      return segments;
+
+    }
+
+ 
+
+    function buildSpokenInstructions(segments) {
+
+      if (!segments.length) return [];
+
+ 
+
+      const list = [];
+
+      let accumulatedDist = segments[0].distance;
+
+      let currentTactile = segments[0].isTactile;
+
+      let startPoint = segments[0].from;
+
+      let incomingBearing = getBearing(startPoint, segments[0].to);
+
+ 
+
+      for (let i = 1; i < segments.length; i++) {
+
+        const seg = segments[i];
+
+        const segBearing = getBearing(seg.from, seg.to);
+
+        const turnAngle = ((segBearing - incomingBearing + 540) % 360) - 180;
+
+        const pavingChanged = seg.isTactile !== currentTactile;
+
+ 
+
+        if (Math.abs(turnAngle) >= 35 || pavingChanged) {
+
+          const surfaceName = currentTactile ? "tactile blind path" : "ordinary walking path";
+
+          const turnPhrase = list.length === 0 ? "Start walking" : getTurnDescription(turnAngle);
+
+ 
+
+          list.push({
+
+            point: startPoint,
+
+            distance: Math.round(accumulatedDist),
+
+            isTactile: currentTactile,
+
+            turnText: turnPhrase,
+
+            speechText: `${turnPhrase}. Walk ${Math.round(accumulatedDist)} metres on the ${surfaceName}.`
+
+          });
+
+ 
+
+          startPoint = seg.from;
+
+          accumulatedDist = seg.distance;
+
+          currentTactile = seg.isTactile;
+
+          incomingBearing = segBearing;
+
+        } else {
+
+          accumulatedDist += seg.distance;
+
+          incomingBearing = segBearing;
+
+        }
+
+      }
+
+ 
+
+      const finalSurface = currentTactile ? "tactile path" : "ordinary path";
+
+      list.push({
+
+        point: startPoint,
+
+        distance: Math.round(accumulatedDist),
+
+        isTactile: currentTactile,
+
+        turnText: list.length === 0 ? "Walk straight" : "Continue straight",
+
+        speechText: `Continue straight for ${Math.round(accumulatedDist)} metres on the ${finalSurface} to destination.`
+
+      });
+
+ 
+
+      list.push({
+
+        point: segments[segments.length - 1].to,
+
+        distance: 0,
+
+        isTactile: false,
+
+        turnText: "Arrived",
+
+        speechText: "You have arrived at your destination."
+
+      });
+
+ 
+
+      return list;
+
+    }
+
+ 
+
+    function renderDirectionsUI(steps) {
+
+      const container = document.getElementById("directionsList");
+
+      container.innerHTML = "";
+
+ 
+
+      steps.forEach((step, idx) => {
+
+        const item = document.createElement("div");
+
+        item.className = "instruction-step";
+
+        item.id = `step-${idx}`;
+
+        item.onclick = () => selectStep(idx);
+
+ 
+
+        const badgeClass = step.isTactile ? "badge-tactile" : "badge-regular";
+
+        const badgeLabel = idx === steps.length - 1 ? "Finish" : (step.isTactile ? "Tactile Paving" : "Regular Walkway");
+
+ 
+
+        item.innerHTML = `
+
+          <div class="step-number">${idx + 1}</div>
+
+          <div style="flex-grow: 1;">
+
+            <span class="step-badge ${badgeClass}">${badgeLabel}</span>
+
+            <div style="font-weight: bold; font-size: 14px;">${step.turnText}</div>
+
+            <div style="font-size: 13px; color: #475569; margin-top: 2px;">${step.speechText}</div>
+
+          </div>
+
+        `;
+
+        container.appendChild(item);
+
+      });
+
+ 
+
+      document.getElementById("voiceBar").style.display = "flex";
+
+    }
+
+ 
+
+    function selectStep(idx) {
+
+      stopAutoPlay();
+
+      currentStepIdx = idx;
+
+      highlightStep(idx);
+
+      speakCurrentStep();
+
+    }
+
+ 
+
+    function highlightStep(idx) {
+
+      document.querySelectorAll(".instruction-step").forEach(el => el.classList.remove("active"));
+
+      const el = document.getElementById(`step-${idx}`);
+
+      if (el) {
+
+        el.classList.add("active");
+
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+      }
+
+ 
+
+      if (instructions[idx]) {
+
+        const pt = instructions[idx].point;
+
+        if (!userMarker) {
+
+          userMarker = L.circleMarker([pt.lat, pt.lon], {
+
+            radius: 8,
+
+            color: "#b45309",
+
+            fillColor: "#f59e0b",
+
+            fillOpacity: 1
+
+          }).addTo(map);
+
+        } else {
+
+          userMarker.setLatLng([pt.lat, pt.lon]);
+
+        }
+
+      }
+
+    }
+
+ 
+
+    function speakCurrentStep() {
+
+      if (!instructions[currentStepIdx]) return;
+
+      highlightStep(currentStepIdx);
+
+      speakText(instructions[currentStepIdx].speechText);
+
+    }
+
+ 
+
+    function nextStepVoice() {
+
+      if (currentStepIdx < instructions.length - 1) {
+
+        currentStepIdx++;
+
+        highlightStep(currentStepIdx);
+
+        speakCurrentStep();
+
+      } else {
+
+        speakText("End of journey directions.");
+
+      }
+
+    }
+
+ 
+
+    function toggleAutoPlay() {
+
+      if (isAutoPlaying) {
+
+        stopAutoPlay();
+
+      } else {
+
+        startAutoPlay();
+
+      }
+
+    }
+
+ 
+
+    function startAutoPlay() {
+
+      if (!instructions.length) return;
+
+      isAutoPlaying = true;
+
+      document.getElementById("autoPlayBtn").textContent = "Pause Reading";
+
+      document.getElementById("autoPlayBtn").style.background = "#dc2626";
+
+ 
+
+      function playNext() {
+
+        if (!isAutoPlaying) return;
+
+        if (currentStepIdx >= instructions.length) {
+
+          stopAutoPlay();
+
+          return;
+
+        }
+
+ 
+
+        highlightStep(currentStepIdx);
+
+        speakText(instructions[currentStepIdx].speechText, () => {
+
+          currentStepIdx++;
+
+          autoPlayTimer = setTimeout(playNext, 1200);
+
+        });
+
+      }
+
+ 
+
+      playNext();
+
+    }
+
+ 
+
+    function stopAutoPlay() {
+
+      isAutoPlaying = false;
+
+      clearTimeout(autoPlayTimer);
+
+      const btn = document.getElementById("autoPlayBtn");
+
+      if (btn) {
+
+        btn.textContent = "Read Entire Route";
+
+        btn.style.background = "#d97706";
+
+      }
+
+    }
+
+ 
+
+    function toggleSimulation() {
+
+      if (simulationTimer) {
+
+        clearInterval(simulationTimer);
+
+        simulationTimer = null;
+
+        document.getElementById("simBtn").textContent = "Simulate Walk";
+
+        return;
+
+      }
+
+ 
+
+      document.getElementById("simBtn").textContent = "Stop Simulation";
+
+      currentStepIdx = 0;
+
+      highlightStep(0);
+
+      speakCurrentStep();
+
+ 
+
+      simulationTimer = setInterval(() => {
+
+        if (currentStepIdx < instructions.length - 1) {
+
+          currentStepIdx++;
+
+          highlightStep(currentStepIdx);
+
+          speakCurrentStep();
+
+        } else {
+
+          clearInterval(simulationTimer);
+
+          simulationTimer = null;
+
+          document.getElementById("simBtn").textContent = "Simulate Walk";
+
+        }
+
+      }, 5500);
+
+    }
+
+ 
+
+    async function findRoute() {
+
+      const startText = document.getElementById("start").value.trim();
+
+      const destText = document.getElementById("destination").value.trim();
+
+      const btn = document.getElementById("routeBtn");
+
+ 
+
+      if (!startText || !destText) {
+
+        announce("Please enter both a starting point and destination.");
+
+        return;
+
+      }
+
+ 
+
+      stopAutoPlay();
+
+      if (simulationTimer) clearInterval(simulationTimer);
+
+ 
+
+      btn.disabled = true;
+
+      btn.textContent = "Finding Route...";
+
+ 
+
+      try {
+
+        announce("Searching locations...");
+
+        const start = await geocode(startText);
+
+        const destination = await geocode(destText);
+
+ 
+
+        if (startMarker) map.removeLayer(startMarker);
+
+        if (destinationMarker) map.removeLayer(destinationMarker);
+
+        if (routeLine) map.removeLayer(routeLine);
+
+        if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+
+ 
+
+        startMarker = L.marker([start.lat, start.lon]).addTo(map).bindPopup("Start").openPopup();
+
+        destinationMarker = L.marker([destination.lat, destination.lon]).addTo(map).bindPopup("Destination");
+
+ 
+
+        const bounds = L.latLngBounds([start.lat, start.lon], [destination.lat, destination.lon]);
+
+        bounds.extend([bounds.getSouth() - 0.006, bounds.getWest() - 0.006]);
+
+        bounds.extend([bounds.getNorth() + 0.006, bounds.getEast() + 0.006]);
+
+ 
+
+        announce("Searching tactile and pedestrian network...");
+
+        const features = await detectPedestrianPaths(bounds);
+
+ 
+
+        const graphData = buildRoutingGraph(features, start, destination);
+
+        let segments = runDijkstra(graphData);
+
+ 
+
+        // Fallback to general pedestrian network if graph has isolated gaps
+
+        if (!segments || segments.length === 0) {
+
+          const fallback = await getOSRMRoute(start, destination);
+
+          const rawCoords = fallback.geometry.coordinates.map(c => ({ lat: c[1], lon: c[0] }));
+
+ 
+
+          segments = [];
+
+          for (let i = 0; i < rawCoords.length - 1; i++) {
+
+            const midLat = (rawCoords[i].lat + rawCoords[i+1].lat) / 2;
+
+            const midLon = (rawCoords[i].lon + rawCoords[i+1].lon) / 2;
+
+ 
+
+            let isNearTactile = false;
+
+            for (const f of features) {
+
+              if (f.isTactile && f.geometry) {
+
+                for (const pt of f.geometry) {
+
+                  if (distanceMetres({ lat: midLat, lon: midLon }, pt) < 6) {
+
+                    isNearTactile = true;
+
+                    break;
+
+                  }
+
+                }
+
+              }
+
+              if (isNearTactile) break;
+
+            }
+
+ 
+
+            segments.push({
+
+              from: rawCoords[i],
+
+              to: rawCoords[i+1],
+
+              distance: distanceMetres(rawCoords[i], rawCoords[i+1]),
+
+              isTactile: isNearTactile
+
+            });
+
+          }
+
+        }
+
+ 
+
+        // Draw ONLY the selected route: Amber = Tactile, Blue = Regular Walkway
+
+        routeLine = L.featureGroup();
+
+        segments.forEach(seg => {
+
+          L.polyline([[seg.from.lat, seg.from.lon], [seg.to.lat, seg.to.lon]], {
+
+            color: seg.isTactile ? "#d97706" : "#2563eb",
+
+            weight: 7,
+
+            opacity: 0.95
+
+          }).addTo(routeLine);
+
+        });
+
+ 
+
+        routeLine.addTo(map);
+
+        map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+
+ 
+
+        // Calculate statistics
+
+        const totalDist = segments.reduce((sum, s) => sum + s.distance, 0);
+
+        const tactileDist = segments.filter(s => s.isTactile).reduce((sum, s) => sum + s.distance, 0);
+
+        const percent = totalDist > 0 ? Math.round((tactileDist / totalDist) * 100) : 0;
+
+        const estDuration = Math.max(1, Math.round(totalDist / 1.1 / 60));
+
+ 
+
+        document.getElementById("distance").textContent = `${Math.round(totalDist)} m`;
+
+        document.getElementById("tactileCoverage").textContent = `${percent}% (${Math.round(tactileDist)}m)`;
+
+        document.getElementById("duration").textContent = `${estDuration} min`;
+
+ 
+
+        // Generate and format spoken instructions
+
+        instructions = buildSpokenInstructions(segments);
+
+        currentStepIdx = 0;
+
+        renderDirectionsUI(instructions);
+
+        highlightStep(0);
+
+ 
+
+        document.getElementById("status").textContent = `Route found: ${Math.round(totalDist)} m (${percent}% tactile paving).`;
+
+        speakText(`Route found: Total distance is ${Math.round(totalDist)} metres, with ${percent} percent tactile blind path coverage. Starting instructions: ${instructions[0].speechText}`);
+
+ 
+
+      } catch (err) {
+
+        announce(err.message || "Failed to find connected route.");
+
+      } finally {
+
+        btn.disabled = false;
+
+        btn.textContent = "Find Route";
+
+      }
+
+    }
+
+ 
+
+    function useMyLocation() {
+
+      if (!navigator.geolocation) {
+
+        announce("Geolocation is not supported by your browser.");
+
+        return;
+
+      }
+
+      announce("Locating position...");
+
+      navigator.geolocation.getCurrentPosition(
+
+        pos => {
+
+          const lat = pos.coords.latitude;
+
+          const lon = pos.coords.longitude;
+
+          document.getElementById("start").value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+
+          map.setView([lat, lon], 16);
+
+          announce("Current location set as starting point.");
+
+        },
+
+        () => announce("GPS location unavailable.")
+
+      );
+
+    }
+
+ 
+
+    function clearRoute() {
+
+      stopAutoPlay();
+
+      if (simulationTimer) clearInterval(simulationTimer);
+
+      if (locationWatcher) navigator.geolocation.clearWatch(locationWatcher);
+
+ 
+
+      if (startMarker) map.removeLayer(startMarker);
+
+      if (destinationMarker) map.removeLayer(destinationMarker);
+
+      if (routeLine) map.removeLayer(routeLine);
+
+      if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+
+ 
+
+      document.getElementById("start").value = "";
+
+      document.getElementById("destination").value = "";
+
+      document.getElementById("distance").textContent = "—";
+
+      document.getElementById("tactileCoverage").textContent = "—";
+
+      document.getElementById("duration").textContent = "—";
+
+      document.getElementById("voiceBar").style.display = "none";
+
+      document.getElementById("directionsList").innerHTML = '<p style="color: #64748b; margin: 0; text-align: center;">Turn-by-turn guidance will appear here once route is found.</p>';
+
+ 
+
+      announce("Route cleared.");
+
+    }
+
+  </script>
+
+</body>
+
+</html>
+
+ 
